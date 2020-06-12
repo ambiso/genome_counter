@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::mem::transmute;
 
 pub struct CounterResults {
     a: u64,
@@ -18,15 +19,27 @@ impl CounterResults {
     }
 }
 
+#[cfg(target_arch = "x86_64")]
+use std::arch::x86_64::*;
+
 pub fn count_acgt(s: &[u8]) -> Option<HashMap<char, u64>> {
-    let mut results = CounterResults::new();
-    for v in s {
-        let v = *v as char;
-        results.a += (v == 'A') as u64;
-        results.c += (v == 'C') as u64;
-        results.g += (v == 'G') as u64;
-        results.t += (v == 'T') as u64;
-    }
+    let results = unsafe {
+        let mut counter = _mm256_setzero_si256();
+        let acgt = _mm256_set_epi64x('A' as i64, 'C' as i64, 'G' as i64, 'T' as i64);
+        for v in s {
+            let v = _mm256_set1_epi64x(*v as i64);
+            let eq = _mm256_cmpeq_epi64(acgt, v);
+            counter = _mm256_add_epi64(counter, eq);
+        }
+        let (t, g, c, a): (i64, i64, i64, i64) = transmute(counter);
+        CounterResults {
+            a: -a as u64,
+            c: -c as u64,
+            g: -g as u64,
+            t: -t as u64,
+        }
+    };
+
     if results.a + results.c + results.g + results.t != s.len() as u64 {
         None
     } else {
