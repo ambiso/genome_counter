@@ -15,3 +15,8 @@ rand = "*"
 [[bench]]
 name = "my_benchmark"
 harness = false
+
+[profile.test]
+debug = true
+opt-level = 1
+

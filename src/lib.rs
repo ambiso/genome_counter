@@ -16,36 +16,34 @@ impl CounterResults {
             t: 0,
         }
     }
-
-    pub fn count(&mut self, v: u8) {
-        match v as char {
-            'A' => self.a += 1,
-            'C' => self.c += 1,
-            'G' => self.g += 1,
-            'T' => self.t += 1,
-            _ => panic!("Unknown letter")
-        }
-    }
 }
 
-pub fn count_acgt(s: &[u8]) -> HashMap<char, u64> {
+pub fn count_acgt(s: &[u8]) -> Option<HashMap<char, u64>> {
     let mut results = CounterResults::new();
     for v in s {
-        results.count(*v);
+        let v = *v as char;
+        results.a += (v == 'A') as u64;
+        results.c += (v == 'C') as u64;
+        results.g += (v == 'G') as u64;
+        results.t += (v == 'T') as u64;
     }
-    let mut map = HashMap::with_capacity(4);
-    map.insert('A', results.a);
-    map.insert('C', results.c);
-    map.insert('G', results.g);
-    map.insert('T', results.t);
-    map
+    if results.a + results.c + results.g + results.t != s.len() as u64 {
+        None
+    } else {
+        let mut map = HashMap::with_capacity(4);
+        map.insert('A', results.a);
+        map.insert('C', results.c);
+        map.insert('G', results.g);
+        map.insert('T', results.t);
+        Some(map)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     #[test]
     fn it_works() {
-        let map = crate::count_acgt("ACCCGGGGTT".as_bytes());
+        let map = crate::count_acgt("ACCCGGGGTT".as_bytes()).unwrap();
         assert_eq!(*map.get(&'A').unwrap(), 1);
         assert_eq!(*map.get(&'C').unwrap(), 3);
         assert_eq!(*map.get(&'G').unwrap(), 4);

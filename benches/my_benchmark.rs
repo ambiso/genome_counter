@@ -6,7 +6,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("count4", |b| b.iter(|| count_acgt("ACGT".as_bytes())));
     let mut rng = rand::thread_rng();
     let mut genome = String::new();
-    for _ in 0..100_00_000 {
+    for _ in 0..100_000_000 {
         genome.push("ACGT".chars().choose(&mut rng).unwrap());
     }
     println!("length: {}", genome.len());
