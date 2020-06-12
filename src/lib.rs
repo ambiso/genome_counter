@@ -1,5 +1,5 @@
+use packed_simd::*;
 use std::collections::HashMap;
-use std::mem::transmute;
 
 pub struct CounterResults {
     a: u64,
@@ -19,27 +19,28 @@ impl CounterResults {
     }
 }
 
-#[cfg(target_arch = "x86_64")]
-use std::arch::x86_64::*;
-
 pub fn count_acgt(s: &[u8]) -> Option<HashMap<char, u64>> {
-    let results = unsafe {
-        let mut counter = _mm256_setzero_si256();
-        let acgt = _mm256_set_epi64x('A' as i64, 'C' as i64, 'G' as i64, 'T' as i64);
-        for v in s {
-            let v = _mm256_set1_epi64x(*v as i64);
-            let eq = _mm256_cmpeq_epi64(acgt, v);
-            counter = _mm256_add_epi64(counter, eq);
-        }
-        let (t, g, c, a): (i64, i64, i64, i64) = transmute(counter);
-        CounterResults {
-            a: -a as u64,
-            c: -c as u64,
-            g: -g as u64,
-            t: -t as u64,
-        }
-    };
+    let av = u8x32::splat('A' as u8);
+    let cv = u8x32::splat('C' as u8);
+    let gv = u8x32::splat('G' as u8);
+    let tv = u8x32::splat('T' as u8);
 
+    #[inline]
+    fn count_letter(chunk: &u8x32, letter: &u8x32) -> u64 {
+        let a_eq = (*letter).eq(*chunk);
+        let count_a = u8x32::from_cast(a_eq).wrapping_sum();
+        (-(count_a as i8)) as u64
+    }
+
+    let mut results = CounterResults::new();
+    s.chunks_exact(32)
+        .map(u8x32::from_slice_unaligned)
+        .for_each(|chunk| {
+            results.a += count_letter(&chunk, &av);
+            results.c += count_letter(&chunk, &cv);
+            results.g += count_letter(&chunk, &gv);
+            results.t += count_letter(&chunk, &tv);
+        });
     if results.a + results.c + results.g + results.t != s.len() as u64 {
         None
     } else {
@@ -56,10 +57,10 @@ pub fn count_acgt(s: &[u8]) -> Option<HashMap<char, u64>> {
 mod tests {
     #[test]
     fn it_works() {
-        let map = crate::count_acgt("ACCCGGGGTT".as_bytes()).unwrap();
-        assert_eq!(*map.get(&'A').unwrap(), 1);
-        assert_eq!(*map.get(&'C').unwrap(), 3);
+        let map = crate::count_acgt("AAAACCCCGGGGTTTTAAAAAAAACCTTTTTT".as_bytes()).unwrap();
+        assert_eq!(*map.get(&'A').unwrap(), 12);
+        assert_eq!(*map.get(&'C').unwrap(), 6);
         assert_eq!(*map.get(&'G').unwrap(), 4);
-        assert_eq!(*map.get(&'T').unwrap(), 2);
+        assert_eq!(*map.get(&'T').unwrap(), 10);
     }
 }
