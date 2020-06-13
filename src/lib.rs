@@ -1,5 +1,4 @@
 use packed_simd::*;
-use std::collections::HashMap;
 use rayon::prelude::*;
 
 pub struct CounterResults {
@@ -62,14 +61,15 @@ fn count_letter(chunk: &u8x32, letter: &u8x32) -> u64 {
 }
 
 pub fn count_opt(s: &[u8]) -> Option<CounterResults> {
+    let n = 32;
     let av = u8x32::splat('A' as u8);
     let cv = u8x32::splat('C' as u8);
     let gv = u8x32::splat('G' as u8);
     let tv = u8x32::splat('T' as u8);
 
-    let results = s.par_chunks(32)
+    let results = s.par_chunks(n)
         .map(|chunk| {
-            if chunk.len() >= 16 {
+            if chunk.len() >= n {
                 let chunk = u8x32::from_slice_unaligned(chunk);
                 CounterResults {
                     a: count_letter(&chunk, &av),
@@ -92,7 +92,7 @@ mod tests {
     fn it_works() {
         let mut rng = rand::thread_rng();
         let mut genome = String::new();
-        for _ in 0..1_000 {
+        for _ in 0..10_000 {
             genome.push("ACGT".chars().choose(&mut rng).unwrap());
         }
         let r1 = crate::count_opt(genome.as_bytes()).unwrap();
