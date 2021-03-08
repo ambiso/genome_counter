@@ -1,5 +1,5 @@
 [package]
-name = "counter"
+name = "genome_counter"
 version = "0.1.0"
 authors = ["ambiso <ambiso@invalid>"]
 edition = "2018"
