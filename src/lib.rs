@@ -1,6 +1,6 @@
+use num_rational::Ratio;
 use packed_simd::*;
 use rayon::prelude::*;
-use num_rational::Ratio;
 
 pub struct CounterResults {
     pub a: u64,
@@ -59,13 +59,25 @@ fn count_li(s: &[u8]) -> CounterResults {
     for &v in s {
         let v = v as i64;
         sum += v;
-        sum2 += v*v;
-        sum3 += v*v*v;
+        sum2 += v * v;
+        sum3 += v * v * v;
     }
-    let a = Ratio::new(sum, 1) * Ratio::new(-16349, 228) + Ratio::new(sum2, 1) * Ratio::new(  37,  38) + Ratio::new(sum3, 1) * Ratio::new(-1, 228) + Ratio::new(n, 1) * Ratio::new( 33299, 19);
-    let c = Ratio::new(sum, 1) * Ratio::new( 16039, 136) + Ratio::new(sum2, 1) * Ratio::new( -55,  34) + Ratio::new(sum3, 1) * Ratio::new( 1, 136) + Ratio::new(n, 1) * Ratio::new(-96915, 34);
-    let g = Ratio::new(sum, 1) * Ratio::new(-15443, 312) + Ratio::new(sum2, 1) * Ratio::new(   9,  13) + Ratio::new(sum3, 1) * Ratio::new(-1, 312) + Ratio::new(n, 1) * Ratio::new(  2345,  2);
-    let t = Ratio::new(sum, 1) * Ratio::new( 13727,4199) + Ratio::new(sum2, 1) * Ratio::new(-203,4199) + Ratio::new(sum3, 1) * Ratio::new( 1,4199) + Ratio::new(n, 1) * Ratio::new(-23785,323);
+    let a = Ratio::new(sum, 1) * Ratio::new(-16349, 228)
+        + Ratio::new(sum2, 1) * Ratio::new(37, 38)
+        + Ratio::new(sum3, 1) * Ratio::new(-1, 228)
+        + Ratio::new(n, 1) * Ratio::new(33299, 19);
+    let c = Ratio::new(sum, 1) * Ratio::new(16039, 136)
+        + Ratio::new(sum2, 1) * Ratio::new(-55, 34)
+        + Ratio::new(sum3, 1) * Ratio::new(1, 136)
+        + Ratio::new(n, 1) * Ratio::new(-96915, 34);
+    let g = Ratio::new(sum, 1) * Ratio::new(-15443, 312)
+        + Ratio::new(sum2, 1) * Ratio::new(9, 13)
+        + Ratio::new(sum3, 1) * Ratio::new(-1, 312)
+        + Ratio::new(n, 1) * Ratio::new(2345, 2);
+    let t = Ratio::new(sum, 1) * Ratio::new(13727, 4199)
+        + Ratio::new(sum2, 1) * Ratio::new(-203, 4199)
+        + Ratio::new(sum3, 1) * Ratio::new(1, 4199)
+        + Ratio::new(n, 1) * Ratio::new(-23785, 323);
 
     CounterResults {
         a: *a.numer() as u64,
@@ -99,7 +111,7 @@ pub fn count_opt(s: &[u8]) -> Option<CounterResults> {
     let cv = u8x32::splat('C' as u8);
     let gv = u8x32::splat('G' as u8);
     let tv = u8x32::splat('T' as u8);
-    let chunk_size = (1<<10) * n;
+    let chunk_size = (1 << 10) * n;
 
     let results = s
         .par_chunks(chunk_size)

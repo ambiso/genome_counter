@@ -1,5 +1,5 @@
-use genome_counter::{count, count_opt, count_opt_li, CounterResults};
 use criterion::{criterion_group, criterion_main, Criterion};
+use genome_counter::{count, count_opt, count_opt_li, CounterResults};
 use rand::seq::IteratorRandom;
 
 fn bench_size(c: &mut Criterion, n: usize, tag: &str, f: impl Fn(&[u8]) -> Option<CounterResults>) {
