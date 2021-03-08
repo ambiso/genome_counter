@@ -1,4 +1,4 @@
-use counter::{count, count_opt, CounterResults};
+use genome_counter::{count, count_opt, CounterResults};
 use criterion::{criterion_group, criterion_main, Criterion};
 use rand::seq::IteratorRandom;
 
