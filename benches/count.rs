@@ -23,7 +23,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     while i < 100_000_000 {
         bench_size(c, i, "opt", &count_opt);
         bench_size(c, i, "simple", &count);
-        i *= 10;
+        i *= 1_000;
     }
 }
 

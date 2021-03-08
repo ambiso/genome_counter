@@ -61,22 +61,29 @@ fn count_letter(chunk: &u8x32, letter: &u8x32) -> u64 {
 }
 
 pub fn count_opt(s: &[u8]) -> Option<CounterResults> {
+    if s.len() < 10_000 {
+        return count(s);
+    }
     let n = 32;
     let av = u8x32::splat('A' as u8);
     let cv = u8x32::splat('C' as u8);
     let gv = u8x32::splat('G' as u8);
     let tv = u8x32::splat('T' as u8);
+    let chunk_size = (1<<10) * n;
 
-    let results = s.par_chunks(n)
+    let results = s
+        .par_chunks(chunk_size)
         .map(|chunk| {
-            if chunk.len() >= n {
-                let chunk = u8x32::from_slice_unaligned(chunk);
-                CounterResults {
-                    a: count_letter(&chunk, &av),
-                    c: count_letter(&chunk, &cv),
-                    g: count_letter(&chunk, &gv),
-                    t: count_letter(&chunk, &tv),
+            if chunk.len() == chunk_size {
+                let mut results = CounterResults::new();
+                for chunk in chunk.chunks_exact(n) {
+                    let chunk = u8x32::from_slice_unaligned(chunk);
+                    results.a += count_letter(&chunk, &av);
+                    results.c += count_letter(&chunk, &cv);
+                    results.g += count_letter(&chunk, &gv);
+                    results.t += count_letter(&chunk, &tv);
                 }
+                results
             } else {
                 count_simple(chunk)
             }
@@ -88,18 +95,22 @@ pub fn count_opt(s: &[u8]) -> Option<CounterResults> {
 #[cfg(test)]
 mod tests {
     use rand::seq::IteratorRandom;
+    use rand::Rng;
+
     #[test]
-    fn it_works() {
+    fn correctness() {
         let mut rng = rand::thread_rng();
-        let mut genome = String::new();
-        for _ in 0..10_000 {
-            genome.push("ACGT".chars().choose(&mut rng).unwrap());
+        for _ in 1..100 {
+            let mut genome = String::new();
+            for _ in 0..rng.gen_range(0, 100_000) {
+                genome.push("ACGT".chars().choose(&mut rng).unwrap());
+            }
+            let r1 = crate::count_opt(genome.as_bytes()).unwrap();
+            let r2 = crate::count(genome.as_bytes()).unwrap();
+            assert_eq!(r1.a, r2.a);
+            assert_eq!(r1.c, r2.c);
+            assert_eq!(r1.g, r2.g);
+            assert_eq!(r1.t, r2.t);
         }
-        let r1 = crate::count_opt(genome.as_bytes()).unwrap();
-        let r2 = crate::count(genome.as_bytes()).unwrap();
-        assert_eq!(r1.a, r2.a);
-        assert_eq!(r1.c, r2.c);
-        assert_eq!(r1.g, r2.g);
-        assert_eq!(r1.t, r2.t);
     }
 }
