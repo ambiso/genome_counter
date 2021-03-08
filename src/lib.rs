@@ -1,5 +1,6 @@
 use packed_simd::*;
 use rayon::prelude::*;
+use num_rational::Ratio;
 
 pub struct CounterResults {
     pub a: u64,
@@ -47,6 +48,35 @@ fn count_simple(s: &[u8]) -> CounterResults {
         results.t += (v == 'T') as u64;
     }
     results
+}
+
+fn count_li(s: &[u8]) -> CounterResults {
+    let mut sum: i64 = 0;
+    let mut sum2: i64 = 0;
+    let mut sum3: i64 = 0;
+    let n = s.len() as i64;
+
+    for &v in s {
+        let v = v as i64;
+        sum += v;
+        sum2 += v*v;
+        sum3 += v*v*v;
+    }
+    let a = Ratio::new(sum, 1) * Ratio::new(-16349, 228) + Ratio::new(sum2, 1) * Ratio::new(  37,  38) + Ratio::new(sum3, 1) * Ratio::new(-1, 228) + Ratio::new(n, 1) * Ratio::new( 33299, 19);
+    let c = Ratio::new(sum, 1) * Ratio::new( 16039, 136) + Ratio::new(sum2, 1) * Ratio::new( -55,  34) + Ratio::new(sum3, 1) * Ratio::new( 1, 136) + Ratio::new(n, 1) * Ratio::new(-96915, 34);
+    let g = Ratio::new(sum, 1) * Ratio::new(-15443, 312) + Ratio::new(sum2, 1) * Ratio::new(   9,  13) + Ratio::new(sum3, 1) * Ratio::new(-1, 312) + Ratio::new(n, 1) * Ratio::new(  2345,  2);
+    let t = Ratio::new(sum, 1) * Ratio::new( 13727,4199) + Ratio::new(sum2, 1) * Ratio::new(-203,4199) + Ratio::new(sum3, 1) * Ratio::new( 1,4199) + Ratio::new(n, 1) * Ratio::new(-23785,323);
+
+    CounterResults {
+        a: *a.numer() as u64,
+        c: *c.numer() as u64,
+        g: *g.numer() as u64,
+        t: *t.numer() as u64,
+    }
+}
+
+pub fn count_opt_li(s: &[u8]) -> Option<CounterResults> {
+    check_results(s, count_li(s))
 }
 
 pub fn count(s: &[u8]) -> Option<CounterResults> {
@@ -102,15 +132,20 @@ mod tests {
         let mut rng = rand::thread_rng();
         for _ in 1..100 {
             let mut genome = String::new();
-            for _ in 0..rng.gen_range(0, 100_000) {
+            for _ in 0..rng.gen_range(0..100_000) {
                 genome.push("ACGT".chars().choose(&mut rng).unwrap());
             }
             let r1 = crate::count_opt(genome.as_bytes()).unwrap();
             let r2 = crate::count(genome.as_bytes()).unwrap();
+            let r3 = crate::count_li(genome.as_bytes());
             assert_eq!(r1.a, r2.a);
             assert_eq!(r1.c, r2.c);
             assert_eq!(r1.g, r2.g);
             assert_eq!(r1.t, r2.t);
+            assert_eq!(r1.a, r3.a);
+            assert_eq!(r1.c, r3.c);
+            assert_eq!(r1.g, r3.g);
+            assert_eq!(r1.t, r3.t);
         }
     }
 }
