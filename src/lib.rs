@@ -50,7 +50,7 @@ fn count_simple(s: &[u8]) -> CounterResults {
     results
 }
 
-fn count_li(s: &[u8]) -> CounterResults {
+fn count_li_simple(s: &[u8]) -> (i64, i64, i64, i64) {
     let mut sum1: i64 = 0;
     let mut sum2: i64 = 0;
     let mut sum3: i64 = 0;
@@ -62,6 +62,39 @@ fn count_li(s: &[u8]) -> CounterResults {
         sum2 += (x >> 1) as i64;
         sum3 += (x >> 2) as i64;
     }
+
+    (sum1, sum2, sum3, sum4)
+}
+
+fn count_li_simd(s: &[u8]) -> (i64, i64, i64, i64) {
+    let mut sum1: i64 = 0;
+    let mut sum2: i64 = 0;
+    let mut sum3: i64 = 0;
+    let sum4 = s.len() as i64;
+
+    for chunk in s.chunks_exact(32) {
+        let chunk = u8x32::from_slice_unaligned(chunk);
+        let x = chunk & 7;
+        sum1 += x.wrapping_sum() as i64;
+        sum2 += (x >> 1).wrapping_sum() as i64;
+        sum3 += (x >> 2).wrapping_sum() as i64;
+    }
+
+    (sum1, sum2, sum3, sum4)
+}
+
+fn count_li(s: &[u8]) -> CounterResults {
+    let n = 32;
+    let chunk_size = (1 << 10) * n;
+
+    let (sum1, sum2, sum3, sum4) = s.par_chunks(chunk_size)
+    .map(|chunks| {
+        if chunks.len() == chunk_size {
+            count_li_simd(chunks)
+        } else {
+            count_li_simple(chunks)
+        }
+    }).reduce(|| (0,0,0,0), |l, r| (l.0 + r.0, l.1 + r.1, l.2 + r.2, l.3 + r.3));
     let a = Ratio::new(sum1, 1) * Ratio::new(1, 1)
         + Ratio::new(sum2, 1) * Ratio::new(-3, 1)
         + Ratio::new(sum3, 1) * Ratio::new(2, 1)
@@ -101,26 +134,21 @@ pub fn count(s: &[u8]) -> Option<CounterResults> {
 }
 
 #[inline]
-fn count_letter(chunks: &[u8], letter: &u8x32) -> u64 {
-    let mut count_a = u8x32::splat(0);
-    for i in 0..7 {
-        let chunk = u8x32::from_slice_unaligned(&chunks[i * 32..]);
-        let a_eq = (*letter).eq(chunk);
-        count_a += u8x32::from_cast(a_eq);
-    }
-    (-(count_a.wrapping_sum() as i8)) as u64
+fn count_letter(chunk: &u8x32, letter: &u8x32) -> u64 {
+    let a_eq = (*letter).eq(*chunk);
+    (-(u8x32::from_cast(a_eq).wrapping_sum() as i8)) as u64
 }
 
 pub fn count_opt(s: &[u8]) -> Option<CounterResults> {
     if s.len() < 10_000 {
         return count(s);
     }
-    let n = 32 * 7;
+    let n = 32;
     let av = u8x32::splat('A' as u8);
     let cv = u8x32::splat('C' as u8);
     let gv = u8x32::splat('G' as u8);
     let tv = u8x32::splat('T' as u8);
-    let chunk_size = (1 << 7) * n;
+    let chunk_size = (1 << 10) * n;
 
     let results = s
         .par_chunks(chunk_size)
@@ -128,6 +156,7 @@ pub fn count_opt(s: &[u8]) -> Option<CounterResults> {
             if chunk.len() == chunk_size {
                 let mut results = CounterResults::new();
                 for chunk in chunk.chunks_exact(n) {
+                    let chunk = u8x32::from_slice_unaligned(chunk);
                     results.a += count_letter(&chunk, &av);
                     results.c += count_letter(&chunk, &cv);
                     results.g += count_letter(&chunk, &gv);

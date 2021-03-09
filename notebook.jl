@@ -19,6 +19,9 @@ intsm = ints .& 7
 # ╔═╡ 997d55b4-806c-11eb-1f2d-572b97b08299
 M = convert.(Rational{Int}, hcat([intsm, (intsm .>> 1), (intsm .>> 2), ones(4)]...)')
 
+# ╔═╡ d2315286-80cb-11eb-3c5c-8de74a4c9ef7
+convert.(Float64, 255 ./ maximum(M, dims=2))
+
 # ╔═╡ 9babd860-806c-11eb-1d6a-e394fde7f079
 @assert rank(M) == length(vars)
 
@@ -52,6 +55,7 @@ generate_code("code_gen.rs", mi)
 # ╠═a5766f68-806c-11eb-3bd3-11c9478de56f
 # ╠═65d65c66-80c5-11eb-0ac3-9b31cdbe2dee
 # ╠═997d55b4-806c-11eb-1f2d-572b97b08299
+# ╠═d2315286-80cb-11eb-3c5c-8de74a4c9ef7
 # ╠═9babd860-806c-11eb-1d6a-e394fde7f079
 # ╠═a79895fc-806c-11eb-130f-69a1bc30d65b
 # ╠═b51c04da-806c-11eb-1d38-e341f90bd8e3
