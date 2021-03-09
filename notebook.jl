@@ -46,8 +46,27 @@ function generate_code(fname, m)
 	end
 end
 
+# ╔═╡ 8a307426-80ce-11eb-1c13-b975088ab884
+function generate_code_int(fname, m)
+	@assert all(denominator.(m) .== 1)
+	open(fname, "w") do f
+		for (i, row) in enumerate(eachrow(m))
+			print(f, "let $(vars[i])=")
+			for (j, col) in enumerate(row)
+				print(f, "sum$(j) * ")
+				print(f, "$(numerator(col))")
+				if j != length(row)
+					print(f, "+")
+				else
+					println(f, ";")
+				end
+			end
+		end
+	end
+end
+
 # ╔═╡ 3a17f222-806d-11eb-12f8-fdbad76d21e8
-generate_code("code_gen.rs", mi)
+generate_code_int("code_gen.rs", mi)
 
 # ╔═╡ Cell order:
 # ╠═8a73f21c-806c-11eb-2dc9-3bebf2b7096e
@@ -59,4 +78,5 @@ generate_code("code_gen.rs", mi)
 # ╠═9babd860-806c-11eb-1d6a-e394fde7f079
 # ╠═a79895fc-806c-11eb-130f-69a1bc30d65b
 # ╠═b51c04da-806c-11eb-1d38-e341f90bd8e3
+# ╠═8a307426-80ce-11eb-1c13-b975088ab884
 # ╠═3a17f222-806d-11eb-12f8-fdbad76d21e8

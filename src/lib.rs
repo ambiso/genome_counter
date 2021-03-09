@@ -1,4 +1,3 @@
-use num_rational::Ratio;
 use packed_simd::*;
 use rayon::prelude::*;
 
@@ -66,6 +65,7 @@ fn count_li_simple(s: &[u8]) -> (i64, i64, i64, i64) {
     (sum1, sum2, sum3, sum4)
 }
 
+/// Vectorized version of count_li_simple
 fn count_li_simd(s: &[u8]) -> (i64, i64, i64, i64) {
     let mut sum1: i64 = 0;
     let mut sum2: i64 = 0;
@@ -87,41 +87,29 @@ fn count_li(s: &[u8]) -> CounterResults {
     let n = 32;
     let chunk_size = (1 << 10) * n;
 
-    let (sum1, sum2, sum3, sum4) = s.par_chunks(chunk_size)
-    .map(|chunks| {
-        if chunks.len() == chunk_size {
-            count_li_simd(chunks)
-        } else {
-            count_li_simple(chunks)
-        }
-    }).reduce(|| (0,0,0,0), |l, r| (l.0 + r.0, l.1 + r.1, l.2 + r.2, l.3 + r.3));
-    let a = Ratio::new(sum1, 1) * Ratio::new(1, 1)
-        + Ratio::new(sum2, 1) * Ratio::new(-3, 1)
-        + Ratio::new(sum3, 1) * Ratio::new(2, 1)
-        + Ratio::new(sum4, 1) * Ratio::new(0, 1);
-    let c = Ratio::new(sum1, 1) * Ratio::new(-1, 1)
-        + Ratio::new(sum2, 1) * Ratio::new(3, 1)
-        + Ratio::new(sum3, 1) * Ratio::new(-3, 1)
-        + Ratio::new(sum4, 1) * Ratio::new(1, 1);
-    let g = Ratio::new(sum1, 1) * Ratio::new(1, 1)
-        + Ratio::new(sum2, 1) * Ratio::new(-2, 1)
-        + Ratio::new(sum3, 1) * Ratio::new(1, 1)
-        + Ratio::new(sum4, 1) * Ratio::new(-1, 1);
-    let t = Ratio::new(sum1, 1) * Ratio::new(-1, 1)
-        + Ratio::new(sum2, 1) * Ratio::new(2, 1)
-        + Ratio::new(sum3, 1) * Ratio::new(0, 1)
-        + Ratio::new(sum4, 1) * Ratio::new(1, 1);
-
-    assert_eq!(*a.denom(), 1);
-    assert_eq!(*c.denom(), 1);
-    assert_eq!(*g.denom(), 1);
-    assert_eq!(*t.denom(), 1);
+    let (sum1, sum2, sum3, sum4) = s
+        .par_chunks(chunk_size)
+        .map(|chunks| {
+            if chunks.len() == chunk_size {
+                count_li_simd(chunks)
+            } else {
+                count_li_simple(chunks)
+            }
+        })
+        .reduce(
+            || (0, 0, 0, 0),
+            |l, r| (l.0 + r.0, l.1 + r.1, l.2 + r.2, l.3 + r.3),
+        );
+    let a = sum1 * 1 + sum2 * -3 + sum3 * 2 + sum4 * 0;
+    let c = sum1 * -1 + sum2 * 3 + sum3 * -3 + sum4 * 1;
+    let g = sum1 * 1 + sum2 * -2 + sum3 * 1 + sum4 * -1;
+    let t = sum1 * -1 + sum2 * 2 + sum3 * 0 + sum4 * 1;
 
     CounterResults {
-        a: *a.numer() as u64,
-        c: *c.numer() as u64,
-        g: *g.numer() as u64,
-        t: *t.numer() as u64,
+        a: a as u64,
+        c: c as u64,
+        g: g as u64,
+        t: t as u64,
     }
 }
 
