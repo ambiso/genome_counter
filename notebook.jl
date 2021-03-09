@@ -14,7 +14,7 @@ vars = collect("acgt")
 ints = convert.(Int, uppercase.(vars))
 
 # ╔═╡ 997d55b4-806c-11eb-1f2d-572b97b08299
-M = convert.(Rational{Int}, hcat([ints .& 7, (ints .<< 1) .& 7, (ints .>> 1) .& 7, ones(4)]...)')
+M = convert.(Rational{Int}, hcat([ints .& 7, (ints .<< 1) .& 7, (ints .<< 2) .& 7, ones(4)]...)')
 
 # ╔═╡ 9babd860-806c-11eb-1d6a-e394fde7f079
 @assert rank(M) == 4

@@ -59,23 +59,23 @@ fn count_li(s: &[u8]) -> CounterResults {
     for &v in s {
         sum1 += (v & 7) as i64;
         sum2 += ((v << 1) & 7) as i64;
-        sum3 += ((v >> 1) & 7) as i64;
+        sum3 += ((v << 2) & 7) as i64;
     }
-    let a = Ratio::new(sum1, 1) * Ratio::new(3, 2)
+    let a = Ratio::new(sum1, 1) * Ratio::new(0, 1)
         + Ratio::new(sum2, 1) * Ratio::new(-1, 4)
-        + Ratio::new(sum3, 1) * Ratio::new(-3, 1)
+        + Ratio::new(sum3, 1) * Ratio::new(3, 8)
         + Ratio::new(sum4, 1) * Ratio::new(0, 1);
-    let c = Ratio::new(sum1, 1) * Ratio::new(-7, 4)
+    let c = Ratio::new(sum1, 1) * Ratio::new(-1, 4)
         + Ratio::new(sum2, 1) * Ratio::new(3, 8)
-        + Ratio::new(sum3, 1) * Ratio::new(3, 1)
+        + Ratio::new(sum3, 1) * Ratio::new(-3, 8)
         + Ratio::new(sum4, 1) * Ratio::new(1, 1);
-    let g = Ratio::new(sum1, 1) * Ratio::new(5, 4)
+    let g = Ratio::new(sum1, 1) * Ratio::new(1, 4)
         + Ratio::new(sum2, 1) * Ratio::new(-1, 8)
-        + Ratio::new(sum3, 1) * Ratio::new(-2, 1)
+        + Ratio::new(sum3, 1) * Ratio::new(1, 4)
         + Ratio::new(sum4, 1) * Ratio::new(-1, 1);
-    let t = Ratio::new(sum1, 1) * Ratio::new(-1, 1)
+    let t = Ratio::new(sum1, 1) * Ratio::new(0, 1)
         + Ratio::new(sum2, 1) * Ratio::new(0, 1)
-        + Ratio::new(sum3, 1) * Ratio::new(2, 1)
+        + Ratio::new(sum3, 1) * Ratio::new(-1, 4)
         + Ratio::new(sum4, 1) * Ratio::new(1, 1);
 
     assert_eq!(*a.denom(), 1);
