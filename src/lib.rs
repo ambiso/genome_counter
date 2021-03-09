@@ -57,15 +57,27 @@ fn count_li(s: &[u8]) -> CounterResults {
     let sum4 = s.len() as i64;
 
     for &v in s {
-        sum1 += (v & 7) as i64;
-        sum2 += ((v >> 1) & 7) as i64;
-        sum3 += ((v >> 2) & 7) as i64;
+        let x = v & 7;
+        sum1 += x as i64;
+        sum2 += (x >> 1) as i64;
+        sum3 += (x >> 2) as i64;
     }
-    let a=Ratio::new(sum1, 1) * Ratio::new(9, 1)+Ratio::new(sum2, 1) * Ratio::new(-19, 1)+Ratio::new(sum3, 1) * Ratio::new(2, 1)+Ratio::new(sum4, 1) * Ratio::new(-8, 1);
-    let c=Ratio::new(sum1, 1) * Ratio::new(-13, 1)+Ratio::new(sum2, 1) * Ratio::new(27, 1)+Ratio::new(sum3, 1) * Ratio::new(-3, 1)+Ratio::new(sum4, 1) * Ratio::new(13, 1);
-    let g=Ratio::new(sum1, 1) * Ratio::new(5, 1)+Ratio::new(sum2, 1) * Ratio::new(-10, 1)+Ratio::new(sum3, 1) * Ratio::new(1, 1)+Ratio::new(sum4, 1) * Ratio::new(-5, 1);
-    let t=Ratio::new(sum1, 1) * Ratio::new(-1, 1)+Ratio::new(sum2, 1) * Ratio::new(2, 1)+Ratio::new(sum3, 1) * Ratio::new(0, 1)+Ratio::new(sum4, 1) * Ratio::new(1, 1);
-
+    let a = Ratio::new(sum1, 1) * Ratio::new(1, 1)
+        + Ratio::new(sum2, 1) * Ratio::new(-3, 1)
+        + Ratio::new(sum3, 1) * Ratio::new(2, 1)
+        + Ratio::new(sum4, 1) * Ratio::new(0, 1);
+    let c = Ratio::new(sum1, 1) * Ratio::new(-1, 1)
+        + Ratio::new(sum2, 1) * Ratio::new(3, 1)
+        + Ratio::new(sum3, 1) * Ratio::new(-3, 1)
+        + Ratio::new(sum4, 1) * Ratio::new(1, 1);
+    let g = Ratio::new(sum1, 1) * Ratio::new(1, 1)
+        + Ratio::new(sum2, 1) * Ratio::new(-2, 1)
+        + Ratio::new(sum3, 1) * Ratio::new(1, 1)
+        + Ratio::new(sum4, 1) * Ratio::new(-1, 1);
+    let t = Ratio::new(sum1, 1) * Ratio::new(-1, 1)
+        + Ratio::new(sum2, 1) * Ratio::new(2, 1)
+        + Ratio::new(sum3, 1) * Ratio::new(0, 1)
+        + Ratio::new(sum4, 1) * Ratio::new(1, 1);
 
     assert_eq!(*a.denom(), 1);
     assert_eq!(*c.denom(), 1);
@@ -92,7 +104,7 @@ pub fn count(s: &[u8]) -> Option<CounterResults> {
 fn count_letter(chunks: &[u8], letter: &u8x32) -> u64 {
     let mut count_a = u8x32::splat(0);
     for i in 0..7 {
-        let chunk = u8x32::from_slice_unaligned(&chunks[i*32..]);
+        let chunk = u8x32::from_slice_unaligned(&chunks[i * 32..]);
         let a_eq = (*letter).eq(chunk);
         count_a += u8x32::from_cast(a_eq);
     }
@@ -108,7 +120,7 @@ pub fn count_opt(s: &[u8]) -> Option<CounterResults> {
     let cv = u8x32::splat('C' as u8);
     let gv = u8x32::splat('G' as u8);
     let tv = u8x32::splat('T' as u8);
-    let chunk_size = (1 << 10) * n;
+    let chunk_size = (1 << 7) * n;
 
     let results = s
         .par_chunks(chunk_size)

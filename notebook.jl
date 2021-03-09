@@ -13,11 +13,14 @@ vars = collect("acgt")
 # ╔═╡ a5766f68-806c-11eb-3bd3-11c9478de56f
 ints = convert.(Int, uppercase.(vars))
 
+# ╔═╡ 65d65c66-80c5-11eb-0ac3-9b31cdbe2dee
+intsm = ints .& 7
+
 # ╔═╡ 997d55b4-806c-11eb-1f2d-572b97b08299
-M = convert.(Rational{Int}, hcat([ints .& 7, (ints .>> 1) .& 7, (ints .>> 2) .& 7, ones(4)]...)')
+M = convert.(Rational{Int}, hcat([intsm, (intsm .>> 1), (intsm .>> 2), ones(4)]...)')
 
 # ╔═╡ 9babd860-806c-11eb-1d6a-e394fde7f079
-@assert rank(M) == 4
+@assert rank(M) == length(vars)
 
 # ╔═╡ a79895fc-806c-11eb-130f-69a1bc30d65b
 mi = inv(M)
@@ -47,6 +50,7 @@ generate_code("code_gen.rs", mi)
 # ╠═8a73f21c-806c-11eb-2dc9-3bebf2b7096e
 # ╠═f705f48e-806c-11eb-0a3a-6bfbd37ede4a
 # ╠═a5766f68-806c-11eb-3bd3-11c9478de56f
+# ╠═65d65c66-80c5-11eb-0ac3-9b31cdbe2dee
 # ╠═997d55b4-806c-11eb-1f2d-572b97b08299
 # ╠═9babd860-806c-11eb-1d6a-e394fde7f079
 # ╠═a79895fc-806c-11eb-130f-69a1bc30d65b
