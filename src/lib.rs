@@ -58,25 +58,14 @@ fn count_li(s: &[u8]) -> CounterResults {
 
     for &v in s {
         sum1 += (v & 7) as i64;
-        sum2 += ((v << 1) & 7) as i64;
-        sum3 += ((v << 2) & 7) as i64;
+        sum2 += ((v >> 1) & 7) as i64;
+        sum3 += ((v >> 2) & 7) as i64;
     }
-    let a = Ratio::new(sum1, 1) * Ratio::new(0, 1)
-        + Ratio::new(sum2, 1) * Ratio::new(-1, 4)
-        + Ratio::new(sum3, 1) * Ratio::new(3, 8)
-        + Ratio::new(sum4, 1) * Ratio::new(0, 1);
-    let c = Ratio::new(sum1, 1) * Ratio::new(-1, 4)
-        + Ratio::new(sum2, 1) * Ratio::new(3, 8)
-        + Ratio::new(sum3, 1) * Ratio::new(-3, 8)
-        + Ratio::new(sum4, 1) * Ratio::new(1, 1);
-    let g = Ratio::new(sum1, 1) * Ratio::new(1, 4)
-        + Ratio::new(sum2, 1) * Ratio::new(-1, 8)
-        + Ratio::new(sum3, 1) * Ratio::new(1, 4)
-        + Ratio::new(sum4, 1) * Ratio::new(-1, 1);
-    let t = Ratio::new(sum1, 1) * Ratio::new(0, 1)
-        + Ratio::new(sum2, 1) * Ratio::new(0, 1)
-        + Ratio::new(sum3, 1) * Ratio::new(-1, 4)
-        + Ratio::new(sum4, 1) * Ratio::new(1, 1);
+    let a=Ratio::new(sum1, 1) * Ratio::new(9, 1)+Ratio::new(sum2, 1) * Ratio::new(-19, 1)+Ratio::new(sum3, 1) * Ratio::new(2, 1)+Ratio::new(sum4, 1) * Ratio::new(-8, 1);
+    let c=Ratio::new(sum1, 1) * Ratio::new(-13, 1)+Ratio::new(sum2, 1) * Ratio::new(27, 1)+Ratio::new(sum3, 1) * Ratio::new(-3, 1)+Ratio::new(sum4, 1) * Ratio::new(13, 1);
+    let g=Ratio::new(sum1, 1) * Ratio::new(5, 1)+Ratio::new(sum2, 1) * Ratio::new(-10, 1)+Ratio::new(sum3, 1) * Ratio::new(1, 1)+Ratio::new(sum4, 1) * Ratio::new(-5, 1);
+    let t=Ratio::new(sum1, 1) * Ratio::new(-1, 1)+Ratio::new(sum2, 1) * Ratio::new(2, 1)+Ratio::new(sum3, 1) * Ratio::new(0, 1)+Ratio::new(sum4, 1) * Ratio::new(1, 1);
+
 
     assert_eq!(*a.denom(), 1);
     assert_eq!(*c.denom(), 1);
@@ -100,17 +89,21 @@ pub fn count(s: &[u8]) -> Option<CounterResults> {
 }
 
 #[inline]
-fn count_letter(chunk: &u8x32, letter: &u8x32) -> u64 {
-    let a_eq = (*letter).eq(*chunk);
-    let count_a = u8x32::from_cast(a_eq).wrapping_sum();
-    (-(count_a as i8)) as u64
+fn count_letter(chunks: &[u8], letter: &u8x32) -> u64 {
+    let mut count_a = u8x32::splat(0);
+    for i in 0..7 {
+        let chunk = u8x32::from_slice_unaligned(&chunks[i*32..]);
+        let a_eq = (*letter).eq(chunk);
+        count_a += u8x32::from_cast(a_eq);
+    }
+    (-(count_a.wrapping_sum() as i8)) as u64
 }
 
 pub fn count_opt(s: &[u8]) -> Option<CounterResults> {
     if s.len() < 10_000 {
         return count(s);
     }
-    let n = 32;
+    let n = 32 * 7;
     let av = u8x32::splat('A' as u8);
     let cv = u8x32::splat('C' as u8);
     let gv = u8x32::splat('G' as u8);
@@ -123,7 +116,6 @@ pub fn count_opt(s: &[u8]) -> Option<CounterResults> {
             if chunk.len() == chunk_size {
                 let mut results = CounterResults::new();
                 for chunk in chunk.chunks_exact(n) {
-                    let chunk = u8x32::from_slice_unaligned(chunk);
                     results.a += count_letter(&chunk, &av);
                     results.c += count_letter(&chunk, &cv);
                     results.g += count_letter(&chunk, &gv);
@@ -143,25 +135,49 @@ mod tests {
     use rand::seq::IteratorRandom;
     use rand::Rng;
 
+    fn compare_on(genome: &String) {
+        let r1 = crate::count_opt(genome.as_bytes()).unwrap();
+        let r2 = crate::count(genome.as_bytes()).unwrap();
+        let r3 = crate::count_li(genome.as_bytes());
+        assert_eq!(r1.a, r2.a);
+        assert_eq!(r1.c, r2.c);
+        assert_eq!(r1.g, r2.g);
+        assert_eq!(r1.t, r2.t);
+        assert_eq!(r1.a, r3.a);
+        assert_eq!(r1.c, r3.c);
+        assert_eq!(r1.g, r3.g);
+        assert_eq!(r1.t, r3.t);
+    }
+
     #[test]
     fn correctness() {
         let mut rng = rand::thread_rng();
         for _ in 1..100 {
             let mut genome = String::new();
             for _ in 0..rng.gen_range(0..100_000) {
+                genome.push('A');
+            }
+            compare_on(&genome);
+            let mut genome = String::new();
+            for _ in 0..rng.gen_range(0..100_000) {
+                genome.push('C');
+            }
+            compare_on(&genome);
+            let mut genome = String::new();
+            for _ in 0..rng.gen_range(0..100_000) {
+                genome.push('G');
+            }
+            compare_on(&genome);
+            let mut genome = String::new();
+            for _ in 0..rng.gen_range(0..100_000) {
+                genome.push('T');
+            }
+            compare_on(&genome);
+            let mut genome = String::new();
+            for _ in 0..rng.gen_range(0..100_000) {
                 genome.push("ACGT".chars().choose(&mut rng).unwrap());
             }
-            let r1 = crate::count_opt(genome.as_bytes()).unwrap();
-            let r2 = crate::count(genome.as_bytes()).unwrap();
-            let r3 = crate::count_li(genome.as_bytes());
-            assert_eq!(r1.a, r2.a);
-            assert_eq!(r1.c, r2.c);
-            assert_eq!(r1.g, r2.g);
-            assert_eq!(r1.t, r2.t);
-            assert_eq!(r1.a, r3.a);
-            assert_eq!(r1.c, r3.c);
-            assert_eq!(r1.g, r3.g);
-            assert_eq!(r1.t, r3.t);
+            compare_on(&genome);
         }
     }
 }
