@@ -51,33 +51,37 @@ fn count_simple(s: &[u8]) -> CounterResults {
 }
 
 fn count_li(s: &[u8]) -> CounterResults {
-    let mut sum: i64 = 0;
+    let mut sum1: i64 = 0;
     let mut sum2: i64 = 0;
     let mut sum3: i64 = 0;
-    let n = s.len() as i64;
+    let sum4 = s.len() as i64;
 
     for &v in s {
-        let v = v as i64;
-        sum += v;
-        sum2 += v * v;
-        sum3 += v * v * v;
+        sum1 += (v & 7) as i64;
+        sum2 += ((v << 1) & 7) as i64;
+        sum3 += ((v >> 1) & 7) as i64;
     }
-    let a = Ratio::new(sum, 1) * Ratio::new(-16349, 228)
-        + Ratio::new(sum2, 1) * Ratio::new(37, 38)
-        + Ratio::new(sum3, 1) * Ratio::new(-1, 228)
-        + Ratio::new(n, 1) * Ratio::new(33299, 19);
-    let c = Ratio::new(sum, 1) * Ratio::new(16039, 136)
-        + Ratio::new(sum2, 1) * Ratio::new(-55, 34)
-        + Ratio::new(sum3, 1) * Ratio::new(1, 136)
-        + Ratio::new(n, 1) * Ratio::new(-96915, 34);
-    let g = Ratio::new(sum, 1) * Ratio::new(-15443, 312)
-        + Ratio::new(sum2, 1) * Ratio::new(9, 13)
-        + Ratio::new(sum3, 1) * Ratio::new(-1, 312)
-        + Ratio::new(n, 1) * Ratio::new(2345, 2);
-    let t = Ratio::new(sum, 1) * Ratio::new(13727, 4199)
-        + Ratio::new(sum2, 1) * Ratio::new(-203, 4199)
-        + Ratio::new(sum3, 1) * Ratio::new(1, 4199)
-        + Ratio::new(n, 1) * Ratio::new(-23785, 323);
+    let a = Ratio::new(sum1, 1) * Ratio::new(3, 2)
+        + Ratio::new(sum2, 1) * Ratio::new(-1, 4)
+        + Ratio::new(sum3, 1) * Ratio::new(-3, 1)
+        + Ratio::new(sum4, 1) * Ratio::new(0, 1);
+    let c = Ratio::new(sum1, 1) * Ratio::new(-7, 4)
+        + Ratio::new(sum2, 1) * Ratio::new(3, 8)
+        + Ratio::new(sum3, 1) * Ratio::new(3, 1)
+        + Ratio::new(sum4, 1) * Ratio::new(1, 1);
+    let g = Ratio::new(sum1, 1) * Ratio::new(5, 4)
+        + Ratio::new(sum2, 1) * Ratio::new(-1, 8)
+        + Ratio::new(sum3, 1) * Ratio::new(-2, 1)
+        + Ratio::new(sum4, 1) * Ratio::new(-1, 1);
+    let t = Ratio::new(sum1, 1) * Ratio::new(-1, 1)
+        + Ratio::new(sum2, 1) * Ratio::new(0, 1)
+        + Ratio::new(sum3, 1) * Ratio::new(2, 1)
+        + Ratio::new(sum4, 1) * Ratio::new(1, 1);
+
+    assert_eq!(*a.denom(), 1);
+    assert_eq!(*c.denom(), 1);
+    assert_eq!(*g.denom(), 1);
+    assert_eq!(*t.denom(), 1);
 
     CounterResults {
         a: *a.numer() as u64,
