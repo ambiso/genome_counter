@@ -4,6 +4,7 @@ version = "0.2.0"
 authors = ["ambiso <ambiso@invalid>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
+description = "Count frequency of the letters ACGT in a genome using SIMD and parallelism"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
