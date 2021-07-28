@@ -49,74 +49,7 @@ fn count_simple(s: &[u8]) -> CounterResults {
     results
 }
 
-fn count_li_simple(s: &[u8]) -> (i64, i64, i64, i64) {
-    let mut sum1: i64 = 0;
-    let mut sum2: i64 = 0;
-    let mut sum3: i64 = 0;
-    let sum4 = s.len() as i64;
-
-    for &v in s {
-        let x = v & 7;
-        sum1 += x as i64;
-        sum2 += (x >> 1) as i64;
-        sum3 += (x >> 2) as i64;
-    }
-
-    (sum1, sum2, sum3, sum4)
-}
-
-/// Vectorized version of count_li_simple
-fn count_li_simd(s: &[u8]) -> (i64, i64, i64, i64) {
-    let mut sum1: i64 = 0;
-    let mut sum2: i64 = 0;
-    let mut sum3: i64 = 0;
-    let sum4 = s.len() as i64;
-
-    for chunk in s.chunks_exact(32) {
-        let chunk = u8x32::from_slice_unaligned(chunk);
-        let x = chunk & 7;
-        sum1 += x.wrapping_sum() as i64;
-        sum2 += (x >> 1).wrapping_sum() as i64;
-        sum3 += (x >> 2).wrapping_sum() as i64;
-    }
-
-    (sum1, sum2, sum3, sum4)
-}
-
-fn count_li(s: &[u8]) -> CounterResults {
-    let n = 32;
-    let chunk_size = (1 << 10) * n;
-
-    let (sum1, sum2, sum3, sum4) = s
-        .par_chunks(chunk_size)
-        .map(|chunks| {
-            if chunks.len() == chunk_size {
-                count_li_simd(chunks)
-            } else {
-                count_li_simple(chunks)
-            }
-        })
-        .reduce(
-            || (0, 0, 0, 0),
-            |l, r| (l.0 + r.0, l.1 + r.1, l.2 + r.2, l.3 + r.3),
-        );
-    let a = sum1 * 1 + sum2 * -3 + sum3 * 2 + sum4 * 0;
-    let c = sum1 * -1 + sum2 * 3 + sum3 * -3 + sum4 * 1;
-    let g = sum1 * 1 + sum2 * -2 + sum3 * 1 + sum4 * -1;
-    let t = sum1 * -1 + sum2 * 2 + sum3 * 0 + sum4 * 1;
-
-    CounterResults {
-        a: a as u64,
-        c: c as u64,
-        g: g as u64,
-        t: t as u64,
-    }
-}
-
-pub fn count_opt_li(s: &[u8]) -> Option<CounterResults> {
-    check_results(s, count_li(s))
-}
-
+/// Counts the letters ACGT in the given byte slice.
 pub fn count(s: &[u8]) -> Option<CounterResults> {
     check_results(s, count_simple(s))
 }
@@ -127,6 +60,17 @@ fn count_letter(chunk: &u8x32, letter: &u8x32) -> u64 {
     (-(u8x32::from_cast(a_eq).wrapping_sum() as i8)) as u64
 }
 
+/// Counts the letters ACGT in the given byte slice.
+/// Uses SIMD and rayon parallelism to speed up the computation.
+///
+/// Usage:
+/// ```
+/// let results = genome_counter::count_opt(b"ACGT").unwrap();
+/// assert_eq!(results.a, 1);
+/// assert_eq!(results.c, 1);
+/// assert_eq!(results.g, 1);
+/// assert_eq!(results.t, 1);
+/// ```
 pub fn count_opt(s: &[u8]) -> Option<CounterResults> {
     if s.len() < 10_000 {
         return count(s);
@@ -167,15 +111,10 @@ mod tests {
     fn compare_on(genome: &String) {
         let r1 = crate::count_opt(genome.as_bytes()).unwrap();
         let r2 = crate::count(genome.as_bytes()).unwrap();
-        let r3 = crate::count_li(genome.as_bytes());
         assert_eq!(r1.a, r2.a);
         assert_eq!(r1.c, r2.c);
         assert_eq!(r1.g, r2.g);
         assert_eq!(r1.t, r2.t);
-        assert_eq!(r1.a, r3.a);
-        assert_eq!(r1.c, r3.c);
-        assert_eq!(r1.g, r3.g);
-        assert_eq!(r1.t, r3.t);
     }
 
     #[test]
