@@ -19,7 +19,7 @@ assert_eq!(results.t, 1);
 
 ## Benchmarking
 
-We use critereon.rs for benchmarking which yields the following results on 100e6 bytes:
+We use criterion.rs for benchmarking which yields the following results on 100e6 bytes:
 
 ```
 Benchmarking count_rand_100000000_opt: Warming up for 3.0000 s
